@@ -1,9 +1,8 @@
+const GR = 1.618;
+
 let capture;
 let lastFrame;
 let displayFrame;
-
-const HIT_WEIGHT = 0.9;
-
 class Slice
 {
     constructor(x,y,w,h)
@@ -20,10 +19,13 @@ function sliceFactory(x,y,w,h,depth,maxDepth)
 {
     if (depth > maxDepth) return [];
     if (depth > 0) {res = [new Slice(x,y,w,h)]} else {res = []};
-    res = res.concat(sliceFactory(x+ceil(w/2),y,ceil(w/2),ceil(h/2),depth+1,maxDepth));
-    res = res.concat(sliceFactory(x,y+ceil(h/2),ceil(w/2),ceil(h/2),depth+1,maxDepth));
-    res = res.concat(sliceFactory(x,y,ceil(w/2),ceil(h/2),depth+1,maxDepth));
-    res = res.concat(sliceFactory(x+ceil(w/2),y+ceil(h/2),ceil(w/2),ceil(h/2),depth+1,maxDepth));
+    res = res.concat(sliceFactory(x,y,w,h/GR,depth+1,maxDepth));
+    res = res.concat(sliceFactory(x,y+h/GR,w,h-h/GR,depth+1,maxDepth));
+    res = res.concat(sliceFactory(x,y,w/GR,h,depth+1,maxDepth));
+    res = res.concat(sliceFactory(x+w/GR,y,w-w/GR,h,depth+1,maxDepth));
+    res = res.concat(sliceFactory(x,y,w,(h-h/GR),depth+1,maxDepth));
+    res = res.concat(sliceFactory(x,y+(h-h/GR),w,h/GR,depth+1,maxDepth));
+    res = res.concat(sliceFactory(x+(w-w/GR),y,w/GR,h,depth+1,maxDepth));
     return res;
 }
 
