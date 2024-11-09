@@ -1,4 +1,7 @@
 const GR = 1.618;
+const THRESH = 3;
+
+let speed = 1;
 
 let capture;
 let lastFrame;
@@ -11,7 +14,7 @@ class Slice
         this.y = y;
         this.w = w;
         this.h = h;
-        this.hit = false;
+        this.hit = 0;
     }
 }
 
@@ -40,20 +43,17 @@ class SliceTree
     reset()
     {
         this.hits = 0;
-        this.slices.forEach((s) => { s.hit = false; })
+        this.slices.forEach((s) => { s.hit = 0; })
     }
 
     pickSlice()
     {
         this.hits++;
-        if (this.hits >= this.slices.length) this.reset();
-        const candidates = this.slices.filter((s) => !s.hit);
+        if (this.hits >= this.slices.length * THRESH) this.reset();
+        const candidates = this.slices.filter((s) => s.hit < THRESH);
         let r = int(random() * candidates.length);
         let slice = candidates[r];
-        if (!slice) {
-            console.log("WHUT?");
-        }
-        slice.hit = true;
+        slice.hit++;
         return slice;
     }
 
@@ -64,6 +64,8 @@ let sliced;
 function doSlice() {
     const slice = sliced.pickSlice();
     const portion = lastFrame.get(slice.x, slice.y, slice.w, slice.h);
+    portion.filter(POSTERIZE, 5);
+    portion.filter(BLUR, 2);
     displayFrame.set(slice.x, slice.y, portion);
 }
 
@@ -78,19 +80,40 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     sliced = new SliceTree(width, height);
 
-    // Create the video capture and hide the element.
     capture = createCapture(VIDEO);
     capture.hide();
 
-    describe('A video stream from the webcam with inverted colors.');
+    describe('A video stream from the webcam sliced over time');
 
     lastFrame = createGraphics(width, height);
     displayFrame = createGraphics(width, height);
 }
 
 function draw() {
-    // Draw the video capture within the canvas.
     lastFrame.image(capture, 0, 0, width, width * capture.height / capture.width);
-    doSlice();
-    image(displayFrame, 0, 0);
+    for (let i = 0; i < speed; i++)
+    {
+        doSlice();
+        image(displayFrame, 0, 0);
+    }
+}
+
+function mouseClicked()
+{
+    const fname = crypto.randomUUID();
+    saveCanvas(fname, "png");
+}
+
+function keyPressed()
+{
+    switch(key)
+    {
+        case "+": 
+            speed++;
+            break;
+        case "-":
+            speed--;
+            speed = speed > 0 ? speed : 1;
+            break;
+    }
 }
